@@ -25,6 +25,7 @@ namespace ILBridge
                         return 1;
                     }
 
+                    // Prepare decompiler
                     var decompiler = new JustDecompileDecompiler();
 
                     var workingDirectory = Path.Combine(Directory.GetCurrentDirectory(), "ILBridge-Temp");
@@ -33,11 +34,26 @@ namespace ILBridge
                     }
                     Directory.CreateDirectory(workingDirectory);
 
+                    var cacheDirectory = Path.Combine(Directory.GetCurrentDirectory(), "ILBridge-Cache");
+                    if (!Directory.Exists(cacheDirectory)) {
+                        Directory.CreateDirectory(cacheDirectory);
+                    }
+
                     var inputAssemblyName = Path.GetFileNameWithoutExtension(inputAssemblyOption.Value);
-                    var inputAssemblyWorkingDirectory = Path.Combine(workingDirectory, inputAssemblyName);
+                    var inputAssemblyWorkingDirectory = Path.Combine(workingDirectory, "Decompiled", inputAssemblyName);
                     Directory.CreateDirectory(inputAssemblyWorkingDirectory);
 
                     decompiler.Decompile(inputAssemblyOption.Value, inputAssemblyWorkingDirectory);
+
+                    // Prepare transpiler
+                    var transpiler = new Transpiler.Bridge.BridgeTranspiler();
+
+                    var toolsDirectory = Path.Combine(cacheDirectory, "Tools", transpiler.Name);
+                    if (!Directory.Exists(toolsDirectory)) {
+                        Directory.CreateDirectory(toolsDirectory);
+                    }
+
+                    transpiler.ConfigureTools(toolsDirectory);
 
                     return 0;
                 });
