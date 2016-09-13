@@ -69,10 +69,12 @@
       <Project>{e6b1469d-911c-4afc-a0f8-1ed00886910b}</Project>
       <Name>JustDecompileCmd</Name>
     </ProjectReference>
+    <ProjectReference Include="..\JustDecompileEngine\MSBuildProjectCreator\Tools.MSBuildProjectBuilder.csproj">
+      <Project>{f7bbb403-7142-4f8d-8e65-5aba94502d3d}</Project>
+      <Name>Tools.MSBuildProjectBuilder</Name>
+    </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Transpiler\Bridge\Templates\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

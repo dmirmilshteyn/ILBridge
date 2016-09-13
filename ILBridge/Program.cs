@@ -17,12 +17,18 @@ namespace ILBridge
             app.Command("transpile", c =>
             {
                 var inputAssemblyOption = c.Argument("input", "Input assembly to be transpiled", false);
+                var outputDirectoryOption = c.Option("-o|--output", "Output directory for transpiled javascript", CommandOptionType.SingleValue);
 
                 c.OnExecute(() =>
                 {
                     if (!File.Exists(inputAssemblyOption.Value)) {
                         Console.Error.WriteLine($"Input assembly \"{inputAssemblyOption.Value}\" has not been found.");
                         return 1;
+                    }
+
+                    string outputDirectory = outputDirectoryOption.HasValue() ? outputDirectoryOption.Value() : Path.Combine(Directory.GetCurrentDirectory(), "ILBridge-Output");
+                    if (!Directory.Exists(outputDirectory)) {
+                        Directory.CreateDirectory(outputDirectory);
                     }
 
                     // Prepare decompiler
@@ -54,6 +60,11 @@ namespace ILBridge
                     }
 
                     transpiler.ConfigureTools(toolsDirectory);
+                    transpiler.GenerateConfiguration(inputAssemblyName, inputAssemblyWorkingDirectory, outputDirectory);
+                    transpiler.Transpile();
+
+                    // Cleanup
+                    Directory.Delete(workingDirectory, true);
 
                     return 0;
                 });

@@ -11,6 +11,7 @@ namespace ILBridge.Transpiler
         string Name { get; }
 
         void ConfigureTools(string toolsDirectory);
-        void GenerateConfiguration(string projectName, string workingDirectory);
+        void GenerateConfiguration(string projectName, string workingDirectory, string outputDirectory);
+        void Transpile();
     }
 }
