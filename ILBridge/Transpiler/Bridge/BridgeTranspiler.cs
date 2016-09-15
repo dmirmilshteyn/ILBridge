@@ -98,10 +98,10 @@ namespace ILBridge.Transpiler.Bridge
 
             Console.WriteLine(GenerateReferenceString(CoreAssembly));
 
-            ExecuteProcess(@"C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe", $"/nostdlib /target:library /warn:0 /reference:{GenerateReferenceString(CoreAssembly)} /out:.build\\compiled.dll /recurse:*.cs", CoreAssembly.WorkingDirectory);
-            ExecuteProcess(Path.Combine(CoreAssembly.WorkingDirectory, ".build", "Bridge.Builder.exe"), $"\"{Path.Combine(".build", "compiled.dll")}\"", CoreAssembly.WorkingDirectory);
+            ExecuteProcess(@"C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe", $"/nostdlib /target:library /warn:0 /reference:{GenerateReferenceString(CoreAssembly)} /out:.build\\{CoreAssembly.AssemblyName}.dll /recurse:*.cs", CoreAssembly.WorkingDirectory);
+            ExecuteProcess(Path.Combine(CoreAssembly.WorkingDirectory, ".build", "Bridge.Builder.exe"), $"\"{Path.Combine(".build", CoreAssembly.AssemblyName + ".dll")}\"", CoreAssembly.WorkingDirectory);
 
-            CoreAssembly.CompiledAssemblyPath = Path.Combine(CoreAssembly.WorkingDirectory, ".build", "compiled.dll");
+            CoreAssembly.CompiledAssemblyPath = Path.Combine(CoreAssembly.WorkingDirectory, ".build", CoreAssembly.AssemblyName + ".dll");
         }
 
         private string GenerateReferenceString(AssemblyStatus assembly) {
