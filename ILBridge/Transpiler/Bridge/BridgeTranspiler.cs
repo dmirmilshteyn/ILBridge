@@ -17,8 +17,8 @@ namespace ILBridge.Transpiler.Bridge
         public string Name { get; } = "Bridge";
 
         public string BridgeBuilderDirectory { get; private set; }
-        public string WorkingDirectory { get; private set; }
-        public string ProjectName { get; private set; }
+        public AssemblyStatus CoreAssembly { get; private set; }
+        public string OutputDirectory { get; private set; }
 
         public void ConfigureTools(string toolsDirectory) {
             var bridgeToolsDirectory = Path.Combine(toolsDirectory, "Tools");
@@ -60,19 +60,19 @@ namespace ILBridge.Transpiler.Bridge
             }
         }
 
-        public void GenerateConfiguration(string projectName, string workingDirectory, string outputDirectory) {
-            this.WorkingDirectory = workingDirectory;
-            this.ProjectName = projectName;
+        public void GenerateConfiguration(AssemblyStatus coreAssembly, string outputDirectory) {
+            this.OutputDirectory = outputDirectory;
+            this.CoreAssembly = coreAssembly;
 
-            var projectOutputDirectory = Path.Combine(outputDirectory, projectName);
-            var buildDirectory = Path.Combine(workingDirectory, ".build");
+            var projectOutputDirectory = Path.Combine(outputDirectory, coreAssembly.AssemblyName);
+            var buildDirectory = Path.Combine(coreAssembly.WorkingDirectory, ".build");
 
             Directory.CreateDirectory(buildDirectory);
             foreach (var file in Directory.EnumerateFiles(BridgeBuilderDirectory)) {
                 File.Copy(file, Path.Combine(buildDirectory, Path.GetFileName(file)));
             }
 
-            using (var template = File.CreateText(Path.Combine(workingDirectory, "bridge.json"))) {
+            using (var template = File.CreateText(Path.Combine(coreAssembly.WorkingDirectory, "bridge.json"))) {
                 template.WriteLine("{");
                 template.WriteLine($"	\"output\": \"{projectOutputDirectory.Replace('\\', '/')}\"");
                 template.WriteLine("}");
@@ -85,8 +85,32 @@ namespace ILBridge.Transpiler.Bridge
         }
 
         public void Transpile() {
-            ExecuteProcess(@"C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe", $"/nostdlib /noconfig /warn:0 /reference:\"{Path.Combine(BridgeBuilderDirectory, "Bridge.dll")}\";\"{Path.Combine(BridgeBuilderDirectory, "Bridge.Html5.dll")}\" /out:.build\\compiled.dll /recurse:*.cs", WorkingDirectory);
-            ExecuteProcess(Path.Combine(WorkingDirectory, ".build", "Bridge.Builder.exe"), $"-lib \"{Path.Combine(".build", "compiled.dll")}\"", WorkingDirectory);
+            // Transpile references assemblies
+            foreach (var referenceAssembly in CoreAssembly.References) {
+                var transpiler = new BridgeTranspiler();
+                transpiler.BridgeBuilderDirectory = BridgeBuilderDirectory;
+                transpiler.GenerateConfiguration(referenceAssembly, OutputDirectory);
+                transpiler.Transpile();
+            }
+
+            Console.WriteLine(GenerateReferenceString(CoreAssembly));
+
+            ExecuteProcess(@"C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe", $"/nostdlib /target:library /warn:0 /reference:{GenerateReferenceString(CoreAssembly)} /out:.build\\compiled.dll /recurse:*.cs", CoreAssembly.WorkingDirectory);
+            ExecuteProcess(Path.Combine(CoreAssembly.WorkingDirectory, ".build", "Bridge.Builder.exe"), $"-lib \"{Path.Combine(".build", "compiled.dll")}\"", CoreAssembly.WorkingDirectory);
+        }
+
+        private string GenerateReferenceString(AssemblyStatus assembly) {
+            var referencesList = new List<string>();
+
+            // Add bridge dependencies
+            referencesList.Add($"\"{Path.Combine(BridgeBuilderDirectory, "Bridge.dll")}\"");
+            referencesList.Add($"\"{Path.Combine(BridgeBuilderDirectory, "Bridge.Html5.dll")}\"");
+
+            foreach (var reference in assembly.References) {
+                referencesList.Add($"\"{reference.AssemblyPath}\"");
+            }
+
+            return string.Join(";", referencesList);
         }
 
         private void ExecuteProcess(string processPath, string arguments, string workingDirectory) {
@@ -94,7 +118,7 @@ namespace ILBridge.Transpiler.Bridge
             startInfo.WindowStyle = ProcessWindowStyle.Hidden;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;
-            startInfo.WorkingDirectory = WorkingDirectory;
+            startInfo.WorkingDirectory = CoreAssembly.WorkingDirectory;
             startInfo.UseShellExecute = false;
             startInfo.Arguments = arguments;
 

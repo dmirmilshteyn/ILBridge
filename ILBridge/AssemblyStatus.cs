@@ -13,6 +13,8 @@ namespace ILBridge
 
         public string WorkingDirectory { get; }
         public string AssemblyPath { get; }
+        public string AssemblyName { get; }
+        public string AssemblyDirectory { get; }
         public string PipelineWorkingDirectory { get; }
 
         public IReadOnlyList<AssemblyStatus> References {
@@ -23,6 +25,9 @@ namespace ILBridge
             this.PipelineWorkingDirectory = pipelineWorkingDirectory;
             this.WorkingDirectory = workingDirectory;
             this.AssemblyPath = assemblyPath;
+
+            this.AssemblyName = Path.GetFileNameWithoutExtension(this.AssemblyPath);
+            this.AssemblyDirectory = Path.GetDirectoryName(this.AssemblyPath);
 
             this.references = new List<AssemblyStatus>();
         }

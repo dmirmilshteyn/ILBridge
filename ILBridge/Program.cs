@@ -63,7 +63,7 @@ namespace ILBridge
                     }
 
                     transpiler.ConfigureTools(toolsDirectory);
-                    transpiler.GenerateConfiguration(inputAssemblyName, inputAssemblyWorkingDirectory, outputDirectory);
+                    transpiler.GenerateConfiguration(inputAssembly, outputDirectory);
                     transpiler.Transpile();
 
                     // Cleanup
