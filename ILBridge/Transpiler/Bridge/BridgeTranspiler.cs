@@ -17,7 +17,7 @@ namespace ILBridge.Transpiler.Bridge
         public string Name { get; } = "Bridge";
 
         public string BridgeBuilderDirectory { get; private set; }
-        public AssemblyStatus CoreAssembly { get; private set; }
+        public AssemblyConfiguration CoreAssembly { get; private set; }
         public string OutputDirectory { get; private set; }
 
         public void ConfigureTools(string toolsDirectory) {
@@ -25,6 +25,8 @@ namespace ILBridge.Transpiler.Bridge
 
             if (!Directory.Exists(bridgeToolsDirectory)) {
                 var toolsArchivePath = Path.Combine(toolsDirectory, "tools.zip");
+
+                Console.WriteLine("Downloading Bridge.NET tooling...");
 
                 var webClient = new WebClient();
                 webClient.DownloadFile(ToolsUrl, toolsArchivePath);
@@ -60,7 +62,7 @@ namespace ILBridge.Transpiler.Bridge
             }
         }
 
-        public void GenerateConfiguration(AssemblyStatus coreAssembly, string outputDirectory) {
+        public void GenerateConfiguration(AssemblyConfiguration coreAssembly, string outputDirectory) {
             this.OutputDirectory = outputDirectory;
             this.CoreAssembly = coreAssembly;
 
@@ -72,11 +74,10 @@ namespace ILBridge.Transpiler.Bridge
                 File.Copy(file, Path.Combine(buildDirectory, Path.GetFileName(file)));
             }
 
-            using (var template = File.CreateText(Path.Combine(coreAssembly.WorkingDirectory, "bridge.json"))) {
-                template.WriteLine("{");
-                template.WriteLine($"	\"output\": \"{projectOutputDirectory.Replace('\\', '/')}\",");
-                //template.WriteLine("    \"logging\": { \"level\": \"info\" }");
-                template.WriteLine("}");
+            using (var bridgeConfigurationFile = File.CreateText(Path.Combine(coreAssembly.WorkingDirectory, "bridge.json"))) {
+                bridgeConfigurationFile.WriteLine("{");
+                bridgeConfigurationFile.WriteLine($"	\"output\": \"{projectOutputDirectory.Replace('\\', '/')}\",");
+                bridgeConfigurationFile.WriteLine("}");
             }
 
             if (Directory.Exists(projectOutputDirectory)) {
@@ -104,7 +105,7 @@ namespace ILBridge.Transpiler.Bridge
             CoreAssembly.CompiledAssemblyPath = Path.Combine(CoreAssembly.WorkingDirectory, ".build", CoreAssembly.AssemblyName + ".dll");
         }
 
-        private string GenerateReferenceString(AssemblyStatus assembly) {
+        private string GenerateReferenceString(AssemblyConfiguration assembly) {
             var referencesList = new List<string>();
 
             // Add bridge dependencies

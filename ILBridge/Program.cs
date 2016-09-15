@@ -27,7 +27,7 @@ namespace ILBridge
                         return 1;
                     }
 
-                    string outputDirectory = outputDirectoryOption.HasValue() ? outputDirectoryOption.Value() : Path.Combine(Directory.GetCurrentDirectory(), "ILBridge-Output");
+                    string outputDirectory = outputDirectoryOption.HasValue() ? outputDirectoryOption.Value() : Path.Combine(Directory.GetCurrentDirectory(), "Output");
                     if (!Directory.Exists(outputDirectory)) {
                         Directory.CreateDirectory(outputDirectory);
                     }
@@ -46,11 +46,7 @@ namespace ILBridge
                         Directory.CreateDirectory(cacheDirectory);
                     }
 
-                    var inputAssemblyName = Path.GetFileNameWithoutExtension(inputAssemblyOption.Value);
-                    var inputAssemblyDirectory = Path.GetDirectoryName(inputAssemblyOption.Value);
-                    var inputAssemblyWorkingDirectory = Path.Combine(workingDirectory, inputAssemblyName);
-
-                    var inputAssembly = AssemblyStatus.BuildAssemblyStatus(workingDirectory, inputAssemblyOption.Value);
+                    var inputAssembly = AssemblyConfiguration.BuildAssemblyConfiguration(workingDirectory, inputAssemblyOption.Value);
 
                     RecursiveDecompile(decompiler, inputAssembly);
 
@@ -67,7 +63,7 @@ namespace ILBridge
                     transpiler.Transpile();
 
                     // Cleanup
-                    //Directory.Delete(workingDirectory, true);
+                    Directory.Delete(workingDirectory, true);
 
                     return 0;
                 });
@@ -76,7 +72,7 @@ namespace ILBridge
             app.Execute(args);
         }
 
-        private static void RecursiveDecompile(IDecompiler decompiler, AssemblyStatus inputAssembly) {
+        private static void RecursiveDecompile(IDecompiler decompiler, AssemblyConfiguration inputAssembly) {
             Directory.CreateDirectory(inputAssembly.WorkingDirectory);
             decompiler.Decompile(inputAssembly.AssemblyPath, inputAssembly.WorkingDirectory);
 

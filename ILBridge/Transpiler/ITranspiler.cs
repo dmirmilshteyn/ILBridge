@@ -9,10 +9,10 @@ namespace ILBridge.Transpiler
     interface ITranspiler
     {
         string Name { get; }
-        AssemblyStatus CoreAssembly { get; }
+        AssemblyConfiguration CoreAssembly { get; }
 
         void ConfigureTools(string toolsDirectory);
-        void GenerateConfiguration(AssemblyStatus coreAssembly, string outputDirectory);
+        void GenerateConfiguration(AssemblyConfiguration coreAssembly, string outputDirectory);
         void Transpile();
     }
 }

@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 
 namespace ILBridge
 {
-    class AssemblyStatus {
-        List<AssemblyStatus> references;
+    class AssemblyConfiguration {
+        List<AssemblyConfiguration> references;
 
         public string WorkingDirectory { get; }
         public string AssemblyPath { get; }
@@ -19,11 +19,11 @@ namespace ILBridge
 
         public string CompiledAssemblyPath { get; set; }
 
-        public IReadOnlyList<AssemblyStatus> References {
+        public IReadOnlyList<AssemblyConfiguration> References {
             get { return references; }
         }
 
-        private AssemblyStatus(string pipelineWorkingDirectory, string workingDirectory, string assemblyPath) {
+        private AssemblyConfiguration(string pipelineWorkingDirectory, string workingDirectory, string assemblyPath) {
             this.PipelineWorkingDirectory = pipelineWorkingDirectory;
             this.WorkingDirectory = workingDirectory;
             this.AssemblyPath = assemblyPath;
@@ -31,7 +31,7 @@ namespace ILBridge
             this.AssemblyName = Path.GetFileNameWithoutExtension(this.AssemblyPath);
             this.AssemblyDirectory = Path.GetDirectoryName(this.AssemblyPath);
 
-            this.references = new List<AssemblyStatus>();
+            this.references = new List<AssemblyConfiguration>();
         }
 
         private void CacheReferences() {
@@ -48,7 +48,7 @@ namespace ILBridge
                         var referencePath = Path.Combine(assemblyDirectory, reference + extension);
 
                         if (File.Exists(referencePath)) {
-                            references.Add(AssemblyStatus.BuildAssemblyStatus(PipelineWorkingDirectory, referencePath));
+                            references.Add(AssemblyConfiguration.BuildAssemblyConfiguration(PipelineWorkingDirectory, referencePath));
                             break;
                         }
                     }
@@ -56,13 +56,13 @@ namespace ILBridge
             }
         }
 
-        public static AssemblyStatus BuildAssemblyStatus(string pipelineWorkingDirectory, string assemblyPath) {
+        public static AssemblyConfiguration BuildAssemblyConfiguration(string pipelineWorkingDirectory, string assemblyPath) {
             var workingDirectory = Path.Combine(pipelineWorkingDirectory, Path.GetFileNameWithoutExtension(assemblyPath));
 
-            var assemblyStatus  = new AssemblyStatus(pipelineWorkingDirectory, workingDirectory, assemblyPath);
-            assemblyStatus.CacheReferences();
+            var configuration  = new AssemblyConfiguration(pipelineWorkingDirectory, workingDirectory, assemblyPath);
+            configuration.CacheReferences();
 
-            return assemblyStatus;
+            return configuration;
         }
     }
 }
