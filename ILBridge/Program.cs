@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.CommandLineUtils;
 using System.IO;
 using ILBridge.Decompiler;
+using Mono.Cecil;
 
 namespace ILBridge
 {
@@ -46,10 +47,12 @@ namespace ILBridge
                     }
 
                     var inputAssemblyName = Path.GetFileNameWithoutExtension(inputAssemblyOption.Value);
-                    var inputAssemblyWorkingDirectory = Path.Combine(workingDirectory, "Decompiled", inputAssemblyName);
-                    Directory.CreateDirectory(inputAssemblyWorkingDirectory);
+                    var inputAssemblyDirectory = Path.GetDirectoryName(inputAssemblyOption.Value);
+                    var inputAssemblyWorkingDirectory = Path.Combine(workingDirectory, inputAssemblyName);
 
-                    decompiler.Decompile(inputAssemblyOption.Value, inputAssemblyWorkingDirectory);
+                    var inputAssembly = AssemblyStatus.BuildAssemblyStatus(workingDirectory, inputAssemblyOption.Value);
+
+                    RecursiveDecompile(decompiler, inputAssembly);
 
                     // Prepare transpiler
                     var transpiler = new Transpiler.Bridge.BridgeTranspiler();
@@ -64,13 +67,22 @@ namespace ILBridge
                     transpiler.Transpile();
 
                     // Cleanup
-                    Directory.Delete(workingDirectory, true);
+                    //Directory.Delete(workingDirectory, true);
 
                     return 0;
                 });
             });
 
             app.Execute(args);
+        }
+
+        private static void RecursiveDecompile(IDecompiler decompiler, AssemblyStatus inputAssembly) {
+            Directory.CreateDirectory(inputAssembly.WorkingDirectory);
+            decompiler.Decompile(inputAssembly.AssemblyPath, inputAssembly.WorkingDirectory);
+
+            foreach (var childAssembly in inputAssembly.References) {
+                RecursiveDecompile(decompiler, childAssembly);
+            }
         }
     }
 }
