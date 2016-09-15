@@ -17,6 +17,8 @@ namespace ILBridge
         public string AssemblyDirectory { get; }
         public string PipelineWorkingDirectory { get; }
 
+        public string CompiledAssemblyPath { get; set; }
+
         public IReadOnlyList<AssemblyStatus> References {
             get { return references; }
         }

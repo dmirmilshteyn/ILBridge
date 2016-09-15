@@ -12,7 +12,7 @@ namespace ILBridge.Transpiler.Bridge
 {
     class BridgeTranspiler : ITranspiler
     {
-        private static readonly string ToolsUrl = @"https://github.com/bridgedotnet/Archives/blob/master/1.13.0/Bridge.NET.VSCode.1.13.0.zip?raw=true";
+        private static readonly string ToolsUrl = @"https://raw.githubusercontent.com/bridgedotnet/Archives/master/15.0.0/Bridge.NET.VSCode.15.0.0.zip";
 
         public string Name { get; } = "Bridge";
 
@@ -74,7 +74,8 @@ namespace ILBridge.Transpiler.Bridge
 
             using (var template = File.CreateText(Path.Combine(coreAssembly.WorkingDirectory, "bridge.json"))) {
                 template.WriteLine("{");
-                template.WriteLine($"	\"output\": \"{projectOutputDirectory.Replace('\\', '/')}\"");
+                template.WriteLine($"	\"output\": \"{projectOutputDirectory.Replace('\\', '/')}\",");
+                //template.WriteLine("    \"logging\": { \"level\": \"info\" }");
                 template.WriteLine("}");
             }
 
@@ -91,12 +92,16 @@ namespace ILBridge.Transpiler.Bridge
                 transpiler.BridgeBuilderDirectory = BridgeBuilderDirectory;
                 transpiler.GenerateConfiguration(referenceAssembly, OutputDirectory);
                 transpiler.Transpile();
+
+                File.Copy(referenceAssembly.CompiledAssemblyPath, Path.Combine(CoreAssembly.WorkingDirectory, ".build", referenceAssembly.AssemblyName + ".dll"));
             }
 
             Console.WriteLine(GenerateReferenceString(CoreAssembly));
 
             ExecuteProcess(@"C:\Windows\Microsoft.NET\Framework\v4.0.30319\csc.exe", $"/nostdlib /target:library /warn:0 /reference:{GenerateReferenceString(CoreAssembly)} /out:.build\\compiled.dll /recurse:*.cs", CoreAssembly.WorkingDirectory);
-            ExecuteProcess(Path.Combine(CoreAssembly.WorkingDirectory, ".build", "Bridge.Builder.exe"), $"-lib \"{Path.Combine(".build", "compiled.dll")}\"", CoreAssembly.WorkingDirectory);
+            ExecuteProcess(Path.Combine(CoreAssembly.WorkingDirectory, ".build", "Bridge.Builder.exe"), $"\"{Path.Combine(".build", "compiled.dll")}\"", CoreAssembly.WorkingDirectory);
+
+            CoreAssembly.CompiledAssemblyPath = Path.Combine(CoreAssembly.WorkingDirectory, ".build", "compiled.dll");
         }
 
         private string GenerateReferenceString(AssemblyStatus assembly) {
@@ -107,7 +112,11 @@ namespace ILBridge.Transpiler.Bridge
             referencesList.Add($"\"{Path.Combine(BridgeBuilderDirectory, "Bridge.Html5.dll")}\"");
 
             foreach (var reference in assembly.References) {
-                referencesList.Add($"\"{reference.AssemblyPath}\"");
+                if (string.IsNullOrEmpty(reference.CompiledAssemblyPath)) {
+                    referencesList.Add($"\"{reference.AssemblyPath}\"");
+                } else {
+                    referencesList.Add($"\"{reference.CompiledAssemblyPath}\"");
+                }
             }
 
             return string.Join(";", referencesList);
